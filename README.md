@@ -6,7 +6,7 @@
 
 * pos_control_p_control_uno_unoROS
 
-https://www.youtube.com/watch?v=ND4LhWjzNHw
+  https://www.youtube.com/watch?v=ND4LhWjzNHw
 
 * step 1
 		int cmd0Pos=0; //degree
