@@ -1,9 +1,9 @@
-# pos_control_uno_noROS
+# arm_control_mega_uno_ROS
 
 * manipulator
 ![](https://github.com/ChingHengWang/pos_control_uno_noROS/DSC_016.JPG.png)
  
 
-* one axis p control use uno
+* pos_control_p_control_uno_unoROS
 https://www.youtube.com/watch?v=ND4LhWjzNHw
 
