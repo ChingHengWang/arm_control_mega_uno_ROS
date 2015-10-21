@@ -9,9 +9,12 @@
   https://www.youtube.com/watch?v=ND4LhWjzNHw
 
 * step 1
+
 		int cmd0Pos=0; //degree
 * step 2
+
 		int md0Pos=-180; //degree
 * step 3
+
 		int md0Pos=180; //degree
 
