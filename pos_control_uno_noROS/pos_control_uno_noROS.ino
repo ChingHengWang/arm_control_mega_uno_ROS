@@ -9,7 +9,17 @@ int pinAStateOld = 0;
 int pinBState = 0;
 int pinBStateOld = 0;
 int x=0;
-int cmd0Pos=-45; //degree
+
+//read Byte from mega
+char commandArray[3];
+chair rS=0;
+byte rH=0;
+byte rL=0;
+byte rF=0;
+int cmd0Pos=0; //degree
+
+
+
 double angle0Pos = 0;
 volatile long encoder0Pos = 0;
 volatile long unknownvalue = 0;
@@ -51,6 +61,33 @@ void setup() {
 
 void loop(){
   if (mainTimer.check() == true) { 
+
+  //GET CMD FROM ENC
+   
+      rS=(char)mySerial.read();
+       if(rS=='{'){
+         mySerial.readBytes(commandArray,3);
+         rH=commandArray[0];
+         rL=commandArray[1];
+         rF=commandArray[2];
+         if(rF=='}')         
+           cmd0Pos=(rH<<8)+rL; 
+         Serial.print("  cmd  ");Serial.print(cmd0Pos);
+         Serial.print("  rS  ");Serial.print(rS);
+         Serial.print("  rH  ");Serial.print(rH);
+         Serial.print("  rL  ");Serial.print(rL);
+         Serial.print("  rF  ");Serial.println(rF);
+         rS=0;
+         
+        for(int i = 0; i < 3; ++i){
+    commandArray[i] = '\0';
+        }
+        
+       }
+
+
+
+
     ////positive angle
     angle0Pos=-1*encoder0Pos*0.00694;//(double)360/(64*810*1);
     //angle0Pos=(double)((double)(360.0/64)/810);
@@ -79,27 +116,23 @@ void loop(){
      else if(vMinus<-255)
           vMinus=-255;      
     
-    //Serial.print("error  ");Serial.print(cmd0Pos-angle0Pos); Serial.print("     vPlus  ");Serial.print(vPlus);Serial.print("     vMinus  ");  Serial.print(vMinus);    Serial.print("   Encoder: ");  Serial.print(encoder0Pos);      
-    //Serial.print(" cmdPwm: ");Serial.println(cmdPwm, DEC);  
-    
+   
     //analogWrite(MotorPin1,vPlus);
     //analogWrite(MotorPin0,vMinus);
  
-    //Serial.print("  encoder0Pos ");Serial.print(encoder0Pos);Serial.print("  angle0Pos ");Serial.print(angle0Pos);  Serial.print("     vPlus  ");Serial.print(vPlus);Serial.print("     vMinus  "); Serial.println(vMinus); 
 
 
 
 
-
-/////READ ENC
-
+/////WRITE ENC to mega
+/*
     x=encoder0Pos;  
     char xS='{';
     byte xH =highByte(x);
     byte xL =lowByte(x);
     char xF='}'; 
     Serial.print(xS);Serial.write(xH);Serial.write(xL);Serial.write(xF);
-
+*/
     
     }
 }
