@@ -9,7 +9,7 @@ int pinAStateOld = 0;
 int pinBState = 0;
 int pinBStateOld = 0;
 int x=0;
-int cmd0Pos=-45; //degree
+int cmd0Pos=180; //degree
 double angle0Pos = 0;
 volatile long encoder0Pos = 0;
 volatile long unknownvalue = 0;
@@ -82,10 +82,10 @@ void loop(){
     //Serial.print("error  ");Serial.print(cmd0Pos-angle0Pos); Serial.print("     vPlus  ");Serial.print(vPlus);Serial.print("     vMinus  ");  Serial.print(vMinus);    Serial.print("   Encoder: ");  Serial.print(encoder0Pos);      
     //Serial.print(" cmdPwm: ");Serial.println(cmdPwm, DEC);  
     
-    //analogWrite(MotorPin1,vPlus);
-    //analogWrite(MotorPin0,vMinus);
+    analogWrite(MotorPin1,vPlus);
+    analogWrite(MotorPin0,vMinus);
  
-    //Serial.print("  encoder0Pos ");Serial.print(encoder0Pos);Serial.print("  angle0Pos ");Serial.print(angle0Pos);  Serial.print("     vPlus  ");Serial.print(vPlus);Serial.print("     vMinus  "); Serial.println(vMinus); 
+    Serial.print("  encoder0Pos ");Serial.print(encoder0Pos);Serial.print("  angle0Pos ");Serial.print(angle0Pos);  Serial.print("     vPlus  ");Serial.print(vPlus);Serial.print("     vMinus  "); Serial.println(vMinus); 
 
 
 
@@ -94,10 +94,10 @@ void loop(){
 /////READ ENC
 
     x=encoder0Pos;  
-    char xS='{';
+    char xS='S';
     byte xH =highByte(x);
     byte xL =lowByte(x);
-    char xF='}'; 
+    char xF='\0'; 
     Serial.print(xS);Serial.write(xH);Serial.write(xL);Serial.write(xF);
 
     
