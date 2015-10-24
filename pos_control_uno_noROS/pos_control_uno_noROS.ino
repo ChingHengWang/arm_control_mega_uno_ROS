@@ -12,7 +12,7 @@ int x=0;
 
 //read Byte from mega
 char commandArray[3];
-chair rS=0;
+char rS=0;
 byte rH=0;
 byte rL=0;
 byte rF=0;
@@ -24,22 +24,6 @@ double angle0Pos = 0;
 volatile long encoder0Pos = 0;
 volatile long unknownvalue = 0;
 Metro mainTimer = Metro(10);
-
-void printDouble( double val, unsigned int precision){
-// prints val with number of decimal places determine by precision
-// NOTE: precision is 1 followed by the number of zeros for the desired number of decimial places
-// example: printDouble( 3.1415, 100); // prints 3.14 (two decimal places)
-
-   Serial.print (int(val));  //prints the int part
-   Serial.print("."); // print the decimal point
-   unsigned int frac;
-   if(val >= 0)
-       frac = (val - int(val)) * precision;
-   else
-       frac = (int(val)- val ) * precision;
-   Serial.print(frac,DEC) ;
-} 
-
 
 
 void setup() { 
@@ -56,7 +40,7 @@ void setup() {
   attachInterrupt(1, doEncoder, CHANGE);
   
   Serial.begin (57600);
-  Serial.println("start"); // a personal quirk
+  //Serial.println("start"); // a personal quirk
 } 
 
 void loop(){
@@ -64,23 +48,23 @@ void loop(){
 
   //GET CMD FROM ENC
    
-      rS=(char)mySerial.read();
+      rS=(char)Serial.read();
        if(rS=='{'){
-         mySerial.readBytes(commandArray,3);
+         Serial.readBytes(commandArray,3);
          rH=commandArray[0];
          rL=commandArray[1];
          rF=commandArray[2];
          if(rF=='}')         
            cmd0Pos=(rH<<8)+rL; 
-         Serial.print("  cmd  ");Serial.print(cmd0Pos);
-         Serial.print("  rS  ");Serial.print(rS);
-         Serial.print("  rH  ");Serial.print(rH);
-         Serial.print("  rL  ");Serial.print(rL);
-         Serial.print("  rF  ");Serial.println(rF);
+           //Serial.print("  cmd  ");Serial.print(cmd0Pos);
+           //Serial.print("  rS  ");Serial.print(rS);
+           //Serial.print("  rH  ");Serial.print(rH);
+           //Serial.print("  rL  ");Serial.print(rL);
+           //Serial.print("  rF  ");Serial.println(rF);
          rS=0;
          
         for(int i = 0; i < 3; ++i){
-    commandArray[i] = '\0';
+          commandArray[i] = '\0';
         }
         
        }
@@ -117,8 +101,8 @@ void loop(){
           vMinus=-255;      
     
    
-    //analogWrite(MotorPin1,vPlus);
-    //analogWrite(MotorPin0,vMinus);
+    analogWrite(MotorPin1,vPlus);
+    analogWrite(MotorPin0,vMinus);
  
 
 
