@@ -1,28 +1,34 @@
 #include <SoftwareSerial.h>
 #include <Metro.h>
-#define encoder0PinA 2
-#define encoder0PinB 3
+
+
+//MOTOR PWM PIN ASSIGNMENT
 #define MotorPin0 9
 #define MotorPin1 10
-int pinAState = 0;
-int pinAStateOld = 0;
-int pinBState = 0;
-int pinBStateOld = 0;
+
+
+//ENCODER PIN ASSIGNMENT
+#define encoder0PinA 2
+#define encoder0PinB 3
+
 int x=0;
 
-//read Byte from mega
+//INTEGER CMD_POS DECODER  (BYTE -> INTEGER)
 char commandArray[3];
 char rS=0;
-byte rH=0;
-byte rL=0;
+byte rH=0;//HIGH BYTE
+byte rL=0;//LOW BYTE
 byte rF=0;
 int cmd0Pos=0; //degree
 
 
+//ENC STATE
+int pinAState = 0;int pinAStateOld = 0;int pinBState = 0;int pinBStateOld = 0;
 
 double angle0Pos = 0;
 volatile long encoder0Pos = 0;
 volatile long unknownvalue = 0;
+
 Metro mainTimer = Metro(10);
 
 
@@ -46,7 +52,7 @@ void setup() {
 void loop(){
   if (mainTimer.check() == true) { 
 
-  //GET CMD FROM ENC
+  //GET POS_CMD FROM MEGA
    
       rS=(char)Serial.read();
        if(rS=='{'){
@@ -56,7 +62,8 @@ void loop(){
          rF=commandArray[2];
          if(rF=='}')         
            cmd0Pos=(rH<<8)+rL; 
-           //Serial.print("  cmd  ");Serial.print(cmd0Pos);
+   // ACTUALLY NOW WE DONT NEED TO SEND ENC TO MEGA        
+	   //Serial.print("  cmd  ");Serial.print(cmd0Pos);
            //Serial.print("  rS  ");Serial.print(rS);
            //Serial.print("  rH  ");Serial.print(rH);
            //Serial.print("  rL  ");Serial.print(rL);
@@ -72,11 +79,14 @@ void loop(){
 
 
 
-    ////positive angle
+    //GET ANGLE
     angle0Pos=-1*encoder0Pos*0.00694;//(double)360/(64*810*1);
     //angle0Pos=(double)((double)(360.0/64)/810);
+
+    //CONTROL STRATERGY
     double cmdPwm=10*(cmd0Pos-angle0Pos);
-    
+ 
+    //SEND CMD TO MOTOR
     int vPlus=0,vMinus=0;
     if(cmdPwm>=0)
     {
@@ -99,8 +109,6 @@ void loop(){
         vMinus=255;
      else if(vMinus<-255)
           vMinus=-255;      
-    
-   
     analogWrite(MotorPin1,vPlus);
     analogWrite(MotorPin0,vMinus);
  
