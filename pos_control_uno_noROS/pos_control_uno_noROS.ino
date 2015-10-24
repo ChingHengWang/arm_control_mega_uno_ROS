@@ -9,13 +9,10 @@
 
 
 //ENCODER PIN ASSIGNMENT
-#define encoder0PinA 2
-#define encoder0PinB 3
-
-int x=0;
+#define encoderPinA 2
+#define encoderPinB 3
 
 int cmdPos=0; //degree
-
 
 //ENC STATE
 int pinAState = 0;int pinAStateOld = 0;int pinBState = 0;int pinBStateOld = 0;
@@ -31,10 +28,10 @@ void setup() {
     pinMode(MotorPin0, OUTPUT);
     pinMode(MotorPin1, OUTPUT);
 
-    pinMode(encoder0PinA, INPUT); 
-    digitalWrite(encoder0PinA, HIGH); // turn on pullup resistor
-    pinMode(encoder0PinB, INPUT); 
-    digitalWrite(encoder0PinB, HIGH); // turn on pullup resistor
+    pinMode(encoderPinA, INPUT); 
+    digitalWrite(encoderPinA, HIGH); // turn on pullup resistor
+    pinMode(encoderPinB, INPUT); 
+    digitalWrite(encoderPinB, HIGH); // turn on pullup resistor
 
     attachInterrupt(0, doEncoder, CHANGE); // encoder pin on interrupt 0 - pin 2
     attachInterrupt(1, doEncoder, CHANGE);

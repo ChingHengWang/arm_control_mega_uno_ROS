@@ -9,7 +9,7 @@ char cS=0;
 byte cH=0;
 byte cL=0;
 byte cF=0;
-int cmd_P=180;
+int cmd_P=0;
 void setup() { 
 
  Serial.begin (115200);
