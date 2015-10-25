@@ -1,0 +1,98 @@
+
+#include "avr/interrupt.h"; 
+#include "SoftwareSerial.h";
+
+#define encoderPinA  0
+#define encoderPinB  1
+#define motorIn1 7
+#define motorIn2 8
+#define LOOPTIME        20
+
+const int Rx = 10; // this is physical pin 2
+const int Tx = 9; // this is physical pin 3
+
+SoftwareSerial mySerial(Rx, Tx);
+
+volatile long Encoderpos = 0;
+volatile int lastEncoded = 0;
+unsigned long lastMilli = 0;                    // loop timing 
+long dT = 0;
+
+double omega_target = 0;
+double omega_actual = 1.6;
+
+int PWM_val = 0;                                // (25% = 64; 50% = 127; 75% = 191; 100% = 255)
+int CPR = 48;                                   // encoder count per revolution
+int gear_ratio =226; 
+
+float Kp = 1;
+float Ki = 0.01;
+//float Ki = 0;
+float Kd = 1;
+//float Kd = 10;
+
+// the setup function runs once when you press reset or power the board
+void setup() 
+{
+  pinMode(encoderPinA, INPUT);  pinMode(encoderPinB, INPUT);
+  pinMode(motorIn1,OUTPUT);   pinMode(motorIn2,OUTPUT);
+  digitalWrite(encoderPinA, HIGH);  digitalWrite(encoderPinB, HIGH); //enable pullup
+  pinMode(Rx, INPUT); pinMode(Tx, OUTPUT);
+  mySerial.begin(19200);
+  GIMSK  = 0b00110000; //Pin Change Interrupt Enable 0
+  PCMSK0 = 0b00000011; //turn on interrupt for PCINT0, PCINT1
+  PCMSK1 = 0b00000011; //turn on interrupt for PCINT8, PCINT9
+  sei();
+}
+
+void loop() 
+{ 
+
+  mySerial.write(132);     
+}
+
+void getMotorData()  
+{                               
+  static long EncoderposPre = 0;       
+  //converting ticks/s to rad/s
+  omega_actual  = ((Encoderpos - EncoderposPre)*(1000/dT))*2*PI/(CPR*gear_ratio);  //ticks/s to rad/s
+  EncoderposPre = Encoderpos;                 
+}
+ 
+double updatePid(double targetValue,double currentValue)   
+{            
+  double pidTerm = 0;                                                            // PID correction
+  double error, sum_error, d_error=0;  
+  static double last_error=0;                            
+  error = targetValue - currentValue; 
+  sum_error = sum_error + error * dT;
+  d_error = (error - last_error) / dT;
+  pidTerm = Kp * error + Ki * sum_error + Kd * d_error;   
+  //pidTerm = Kp * error + Kd * d_error;                         
+  last_error = error;  
+  return constrain(int(pidTerm/0.00682352941), -255, 255);
+}
+
+ISR(PCINT0_vect)
+{
+  int MSB = digitalRead(encoderPinA); //MSB = most significant bit
+  int LSB = digitalRead(encoderPinB); //LSB = least significant bit
+ 
+  int encoded = (MSB << 1) | LSB; //converting the 2 pin value to single number
+  int sum  = (lastEncoded << 2) | encoded; //adding it to the previous encoded value
+
+  if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+      Encoderpos++;
+  if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+      Encoderpos--;
+  lastEncoded = encoded; //store this value for next time
+}
+/*
+void printMotorInfo()  
+{                                                                         
+   //mySerial.print("  LEFT rad/s:");                  
+   //mySerial.print(omega_actual);
+   mySerial.print(Encoderpos);
+   //mySerial.println();
+}
+*/
