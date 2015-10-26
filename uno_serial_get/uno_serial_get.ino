@@ -17,7 +17,7 @@ Metro mainTimer = Metro(10);
 
 void setup() { 
   Serial.begin (57600);
-  mySerial.begin (19200);
+  mySerial.begin (57600);
   Serial.println("start"); // a personal quirk
 } 
 

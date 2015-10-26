@@ -43,8 +43,8 @@ void loop(){
   if (mainTimer.check() == true) { 
 
     //GET CMD FROM MEGA
-    get_cmd_pos();
-
+    //get_cmd_pos();
+    cmdPos=180;
     //GET ENC
     double anglePos=get_angle_from_enc();
 
