@@ -62,8 +62,8 @@ void loop(){
     double pidTerm=Kp*(cmdPos-anglePos);
  
     //SEND CMD
-    send_cmd_to_motor(pidTerm,50); // pwm limit 52 is the fast speed that encoder can couter 
-    mySerialprintInt(unknownvalue);
+    send_cmd_to_motor(pidTerm,150); // pwm limit 52 is the fast speed that encoder can couter 
+    mySerialprintInt((int)anglePos);
     
 
     }

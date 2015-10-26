@@ -9,12 +9,12 @@ char cS=0;
 byte cH=0;
 byte cL=0;
 byte cF=0;
-int cmd_P=0;
+int cmd_P=180;
 void setup() { 
 
  Serial.begin (115200);
  Serial.println("start");                // a personal quirk
- mySerial.begin(57600);
+ mySerial.begin(19200);
 
 
 } 
