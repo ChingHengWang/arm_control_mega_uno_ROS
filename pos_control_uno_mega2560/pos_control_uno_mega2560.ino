@@ -12,6 +12,10 @@
 #define encoderPinA 2
 #define encoderPinB 3
 
+// STATE MACHINE
+#define HOME_STATE 0
+#define CONTROL_STATE 1
+int state=HOME_STATE;
 int cmdPos=0; //degree
 
 //ENC STATE
@@ -21,6 +25,10 @@ volatile long encoderPos = 0;
 volatile long unknownvalue = 0;
 
 Metro mainTimer = Metro(10);
+
+//HOME
+#define HomePin 0
+
 
 
 void setup() { 
@@ -41,28 +49,51 @@ void setup() {
 
 void loop(){
   if (mainTimer.check() == true) { 
+  
+    //READ HOME SENSOR VALUE
+    int HomeValue=analogRead(HomePin);
+
 
     //GET CMD FROM MEGA
     get_cmd_pos();
 
     //GET ENC
     double anglePos=get_angle_from_enc();
-
+    double cmdPwm=0;
     //CONTROL STRATERGY
-    double cmdPwm=10*(cmdPos-anglePos);
- 
-    //SEND CMD
-    send_cmd_to_motor(cmdPwm);
+    switch(state){
+      
+      case HOME_STATE:
+            cmdPwm=10*(cmdPos-anglePos);
+            if(HomeValue>600) {
+              send_cmd_to_motor(0);
+            }
+            else{
+            //SEND CMD
+            send_cmd_to_motor(cmdPwm);
+            }
+            break;
+      case CONTROL_STATE:
+            cmdPwm=10*(cmdPos-anglePos);
+            //SEND CMD
+            send_cmd_to_motor(cmdPwm);
+            break;
+      
+      }
+
+
+    
+
 
     /////WRITE ENC to mega
-    /*
-    x=encoderPos;  
+    
+    int x=HomeValue;  
     char xS='{';
     byte xH =highByte(x);
     byte xL =lowByte(x);
     char xF='}'; 
     Serial.print(xS);Serial.write(xH);Serial.write(xL);Serial.write(xF);
-    */
+    
     
     }
 }
