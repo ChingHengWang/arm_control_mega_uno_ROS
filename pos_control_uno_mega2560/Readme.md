@@ -4,6 +4,6 @@
 
 		if(HomeValue>600) 
 
-* State Machine and state command is from ros_topic 
+* State Machine
 
-https://www.draw.io/#G0B134T1DTCk6tYWJRX0pVMURhSEU
+https://drive.google.com/open?id=0B134T1DTCk6tVE5TOTR2cm1hdk0
