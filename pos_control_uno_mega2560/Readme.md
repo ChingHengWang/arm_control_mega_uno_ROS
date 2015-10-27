@@ -5,14 +5,5 @@
 		if(HomeValue>600) 
 
 * State Machine and state command is from ros_topic 
-	
-		// STATE MACHINE
 
-* In HOME_STATE , joint go back to find home sensor , and stop there. 
-
-		#define HOME_STATE 0
-
-* In CONTROL_STATE, joint know where is the home origin now, and only can move in the working range.
-
-		#define CONTROL_STATE 1
-
+https://www.draw.io/#G0B134T1DTCk6tYWJRX0pVMURhSEU
