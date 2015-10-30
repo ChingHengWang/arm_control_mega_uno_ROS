@@ -1,7 +1,11 @@
 
 #include <SoftwareSerial.h>
 #include <Metro.h>
-
+#define RIGHT 1
+#define LEFT -1
+//#define AXIS_TYPE OUTWARD
+#define AXIS_TYPE RIGHT
+#define HOME_SPEED_PWM 150
 
 //MOTOR PWM PIN ASSIGNMENT
 #define MotorPin0 9
@@ -13,11 +17,22 @@
 #define encoderPinB 3
 
 // STATE MACHINE
-#define HOME_STATE 0
-#define CONTROL_STATE 1
-int state=HOME_STATE;
-int cmdPos=0; //degree
+#define INIT_STATE 0
+#define HOME_STATE 1
+#define HOME_ZONE_STATE 2
+#define WORKING_RANGE_STATE 3
+#define END_ZONE_STATE 4
 
+
+int state=HOME_STATE;
+
+
+
+double cmdPos_ROS=0,anglePos_ROS=0; //degree
+double pos_offset=0;
+double max_working_rage=0;
+double cmdPos_Joint=0,anglePos_Joint=0;
+double Kp=20;
 //ENC STATE
 int pinAState = 0;int pinAStateOld = 0;int pinBState = 0;int pinBStateOld = 0;
 
@@ -28,7 +43,7 @@ Metro mainTimer = Metro(10);
 
 //HOME
 #define HomePin 0
-
+#define EndPin 1
 
 
 void setup() { 
@@ -52,33 +67,76 @@ void loop(){
   
     //READ HOME SENSOR VALUE
     int HomeValue=analogRead(HomePin);
-
+    int EndValue=analogRead(EndPin);
 
     //GET CMD FROM MEGA
     get_cmd_pos();
-
+    
+    //CREATE cmdPos_Joint
+    cmdPos_Joint=cmdPos_ROS+pos_offset;
     //GET ENC
-    double anglePos=get_angle_from_enc();
-    double cmdPwm=0;
+    get_angle_from_enc();
+
+    
     //CONTROL STRATERGY
     switch(state){
+
+      case INIT_STATE:
+            go_joint_pos_ros(cmdPos_ROS);
+	          break;
+
       
       case HOME_STATE:
-            cmdPwm=10*(cmdPos-anglePos);
-            if(HomeValue>600) {
-              send_cmd_to_motor(0);
+          
+            if(HomeValue>650) {
+              	pos_offset=anglePos_Joint;
+                state=HOME_ZONE_STATE;
+
             }
             else{
-            //SEND CMD
-            send_cmd_to_motor(cmdPwm);
+              if (AXIS_TYPE==RIGHT){
+                  send_cmd_to_motor(-HOME_SPEED_PWM);
+              }
+              else {
+                  send_cmd_to_motor(HOME_SPEED_PWM);
+              }
+            	    
             }
+	        
             break;
-      case CONTROL_STATE:
-            cmdPwm=10*(cmdPos-anglePos);
-            //SEND CMD
-            send_cmd_to_motor(cmdPwm);
+
+      case HOME_ZONE_STATE:
+      	    if(cmdPos_ROS>anglePos_ROS) {
+                  go_joint_pos_ros(cmdPos_ROS);
+                  state=WORKING_RANGE_STATE;
+      	    }
+           else
+                  go_joint_pos_ros(0);
+           break;
+
+      case WORKING_RANGE_STATE:
+            if(HomeValue>650) {
+                state=HOME_ZONE_STATE;
+            }
+            else if (EndValue>650){
+                max_working_rage=anglePos_ROS;
+                state=END_ZONE_STATE;
+              } 
+              else
+              {
+                  go_joint_pos_ros(cmdPos_ROS);            
+              }
             break;
-      
+      case END_ZONE_STATE:
+            if(cmdPos_ROS<anglePos_ROS) {
+                  go_joint_pos_ros(cmdPos_ROS);
+                  state=WORKING_RANGE_STATE;
+            }
+           else {
+                  go_joint_pos_ros(max_working_rage);  
+           }
+           break;
+   
       }
 
 
@@ -87,7 +145,7 @@ void loop(){
 
     /////WRITE ENC to mega
     
-    int x=HomeValue;  
+    int x=cmdPos_ROS;  
     char xS='{';
     byte xH =highByte(x);
     byte xL =lowByte(x);
@@ -97,6 +155,20 @@ void loop(){
     
     }
 }
+
+
+void go_joint_pos_ros(double target_pos_ros) {
+      double target_pos_joint=target_pos_ros+pos_offset;
+      double cmdPwm=Kp*(target_pos_joint-anglePos_Joint);
+      send_cmd_to_motor(cmdPwm);
+        
+      if (AXIS_TYPE==RIGHT){
+          send_cmd_to_motor(cmdPwm);
+      }
+      else {
+          send_cmd_to_motor(-cmdPwm);
+      }
+     }
 
 
 void get_cmd_pos() {
@@ -111,23 +183,23 @@ void get_cmd_pos() {
      byte rL=commandArray[1];
      char rF=commandArray[2];
      if(rF=='}')         
-       cmdPos=(rH<<8)+rL; 
-     // ACTUALLY NOW WE DONT NEED TO SEND ENC TO MEGA        
-     //Serial.print("  cmd  ");Serial.print(cmd0Pos);
-     //Serial.print("  rS  ");Serial.print(rS);
-     //Serial.print("  rH  ");Serial.print(rH);
-     //Serial.print("  rL  ");Serial.print(rL);
-     //Serial.print("  rF  ");Serial.println(rF);
+       cmdPos_ROS=(double)((rH<<8)+rL); 
 
      }
 
 }
 
 
-double get_angle_from_enc() {
+void get_angle_from_enc() {
 
-    double result=-1*encoderPos*0.00694;//(double)360/(64*810*1);
-    return result;
+    if (AXIS_TYPE==RIGHT){
+          anglePos_Joint=-1*encoderPos*0.00694;//(double)360/(64*810*1);
+          anglePos_ROS=anglePos_Joint-pos_offset;
+    }
+    else {
+          anglePos_Joint=1*encoderPos*0.00694;//(double)360/(64*810*1);      
+          anglePos_ROS=anglePos_Joint-pos_offset;
+    }
 }
 
 

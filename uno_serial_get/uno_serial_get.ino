@@ -12,12 +12,12 @@ byte rH=0;
 byte rL=0;
 char rF=0;
 
-Metro mainTimer = Metro(10);
+Metro mainTimer = Metro(100);
 
 
 void setup() { 
   Serial.begin (57600);
-  mySerial.begin (57600);
+  mySerial.begin (19200);
   Serial.println("start"); // a personal quirk
 } 
 
