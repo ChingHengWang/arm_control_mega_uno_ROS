@@ -7,7 +7,7 @@
 
 ros::NodeHandle nh;
 SoftwareSerial mySerial(10, 11); // RX, TX
-SoftwareSerial mySerial2(12, 13); // RX, TX
+
 //cmd Byte to UNO
 char commandArray[3];
 char cS=0;
@@ -28,7 +28,6 @@ void setup() {
  nh.initNode();
  nh.subscribe(sub);
  mySerial.begin(57600);
- mySerial2.begin(57600);
 
 } 
 
