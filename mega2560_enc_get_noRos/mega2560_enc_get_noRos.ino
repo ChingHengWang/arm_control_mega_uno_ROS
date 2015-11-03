@@ -1,7 +1,7 @@
 
 #include <SoftwareSerial.h>
 #include <Metro.h>
-SoftwareSerial mySerial(10, 11); // RX, TX
+SoftwareSerial mySerial(13, 9); // RX, TX
 Metro mainTimer = Metro(10);
 boolean stringComplete = false;
 char commandArray[3];

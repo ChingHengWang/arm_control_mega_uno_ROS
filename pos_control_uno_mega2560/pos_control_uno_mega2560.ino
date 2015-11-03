@@ -29,6 +29,23 @@ int state=HOME_STATE;
 int home_switch=0;
 int offset_flag=0;
 
+
+struct mySerialSendByte{
+  char cS=0;
+  byte cV0H=0;
+  byte cV0L=0;
+  byte cV1H=0;
+  byte cV1L=0;
+  byte cV2H=0;
+  byte cV2L=0;
+  byte cV3H=0;
+  byte cV3L=0;
+  byte cV4H=0;
+  byte cV4L=0;
+  byte cF=0; 
+  };
+mySerialSendByte mySerialSendByte;
+
 double cmdPos_ROS=0,anglePos_ROS=0; //degree
 double pos_offset=0;
 double max_working_rage=0;
@@ -163,12 +180,32 @@ void loop(){
       }
 
           
-    int x=cmdPos_ROS;  
-    char xS='{';
-    byte xH =highByte(x);
-    byte xL =lowByte(x);
-    char xF='}'; 
-    Serial.print(xS);Serial.write(xH);Serial.write(xL);Serial.write(xF);
+    int v[5]=[1,2,3,4,5];  
+    mySerialSendByte.cS='{';
+    mySerialSendByte.cV0H =highByte(v[0]);
+    mySerialSendByte.cV0L =lowByte(v[0];
+    mySerialSendByte.cV1H =highByte(v[1]);
+    mySerialSendByte.cV1L =lowByte(v[1]);
+    mySerialSendByte.cV2H =highByte(v[2]);
+    mySerialSendByte.cV2L =lowByte(v[2]);
+    mySerialSendByte.cV3H =highByte(v[3]);
+    mySerialSendByte.cV3L =lowByte(v[3]);
+    mySerialSendByte.cV4H =highByte(v[4]);
+    mySerialSendByte.cV4L =lowByte(v[4]);
+    mySerialSendByte.cF='}'; 
+ 
+    Serial.print(mySerialSendByte.cS);
+    Serial.write(mySerialSendByte.cV0H);
+    Serial.write(mySerialSendByte.cV0L);
+    Serial.write(mySerialSendByte.cV1H);
+    Serial.write(mySerialSendByte.cV1L);
+    Serial.write(mySerialSendByte.cV2H);
+    Serial.write(mySerialSendByte.cV2L);
+    Serial.write(mySerialSendByte.cV3H);
+    Serial.write(mySerialSendByte.cV3L);
+    Serial.write(mySerialSendByte.cV4H);
+    Serial.write(mySerialSendByte.cV4L);
+    Serial.print(mySerialSendByte.cF);
  
     }
 }
