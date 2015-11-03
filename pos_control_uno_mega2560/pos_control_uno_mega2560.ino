@@ -22,11 +22,12 @@
 #define HOME_ZONE_STATE 2
 #define WORKING_RANGE_STATE 3
 #define END_ZONE_STATE 4
+double resolution=(double)6.28/32767; //resolution
 
 
 int state=HOME_STATE;
-
-
+int home_switch=0;
+int offset_flag=0;
 
 double cmdPos_ROS=0,anglePos_ROS=0; //degree
 double pos_offset=0;
@@ -60,11 +61,14 @@ void setup() {
     attachInterrupt(1, doEncoder, CHANGE);
 
     Serial.begin (57600);
+
 } 
 
 void loop(){
   if (mainTimer.check() == true) { 
-  
+     /////WRITE ENC to mega
+
+    
     //READ HOME SENSOR VALUE
     int HomeValue=analogRead(HomePin);
     int EndValue=analogRead(EndPin);
@@ -82,14 +86,19 @@ void loop(){
     switch(state){
 
       case INIT_STATE:
-            go_joint_pos_ros(cmdPos_ROS);
+            send_cmd_to_motor(0);
+            if(home_switch==1)
+              state=HOME_STATE;
 	          break;
 
       
       case HOME_STATE:
           
             if(HomeValue>650) {
+              if(offset_flag==0){
               	pos_offset=anglePos_Joint;
+                offset_flag=1;
+              }
                 state=HOME_ZONE_STATE;
 
             }
@@ -106,53 +115,61 @@ void loop(){
             break;
 
       case HOME_ZONE_STATE:
-      	    if(cmdPos_ROS>anglePos_ROS) {
-                  go_joint_pos_ros(cmdPos_ROS);
-                  state=WORKING_RANGE_STATE;
-      	    }
-           else
-                  go_joint_pos_ros(0);
-           break;
+            if(home_switch==1)
+              go_joint_pos_ros(0);
+            else{
+        	    if(cmdPos_ROS>anglePos_ROS) {
+                    go_joint_pos_ros(cmdPos_ROS);              
+                    state=WORKING_RANGE_STATE;
+        	    }
+              else
+                    go_joint_pos_ros(0);
+            }
+            break;
 
       case WORKING_RANGE_STATE:
-            if(HomeValue>650) {
-                state=HOME_ZONE_STATE;
-            }
-            else if (EndValue>650){
-                max_working_rage=anglePos_ROS;
-                state=END_ZONE_STATE;
-              } 
-              else
-              {
-                  go_joint_pos_ros(cmdPos_ROS);            
+            if(home_switch==1)
+              state=HOME_STATE;
+            else {
+              if(HomeValue>650) {
+                  state=HOME_ZONE_STATE;
               }
+              else if (EndValue>650){
+                  max_working_rage=anglePos_ROS;
+                  state=END_ZONE_STATE;
+                } 
+                else
+                {
+                    go_joint_pos_ros(cmdPos_ROS);            
+                }              
+            }
+
+           
             break;
       case END_ZONE_STATE:
-            if(cmdPos_ROS<anglePos_ROS) {
-                  go_joint_pos_ros(cmdPos_ROS);
-                  state=WORKING_RANGE_STATE;
+            if(home_switch==1)
+              state=HOME_STATE;
+            else {
+              if(cmdPos_ROS<anglePos_ROS) {
+                    go_joint_pos_ros(cmdPos_ROS); 
+                    state=WORKING_RANGE_STATE;
+              }
+              else {
+                    go_joint_pos_ros(max_working_rage);  
+              }
             }
-           else {
-                  go_joint_pos_ros(max_working_rage);  
-           }
-           break;
+            break;
    
       }
 
-
-    
-
-
-    /////WRITE ENC to mega
-    
+          
     int x=cmdPos_ROS;  
     char xS='{';
     byte xH =highByte(x);
     byte xL =lowByte(x);
     char xF='}'; 
     Serial.print(xS);Serial.write(xH);Serial.write(xL);Serial.write(xF);
-    
-    
+ 
     }
 }
 
@@ -177,14 +194,18 @@ void get_cmd_pos() {
 
      char rS=(char)Serial.read();
      if(rS=='{'){
-     char commandArray[3];
-     Serial.readBytes(commandArray,3);
-     byte rH=commandArray[0];
-     byte rL=commandArray[1];
-     char rF=commandArray[2];
-     if(rF=='}')         
-       cmdPos_ROS=(double)((rH<<8)+rL); 
-
+     char commandArray[5];
+     Serial.readBytes(commandArray,5);
+     byte rSH=commandArray[0];
+     byte rSL=commandArray[1];
+     byte rPH=commandArray[2];
+     byte rPL=commandArray[3];
+     char rF=commandArray[4];
+     if(rF=='}') { 
+       home_switch=((rSH<<8)+rSL);        
+       int quantity=((rPH<<8)+rPL); 
+       cmdPos_ROS=quantity*resolution*(double)360/6.28;
+       }
      }
 
 }
