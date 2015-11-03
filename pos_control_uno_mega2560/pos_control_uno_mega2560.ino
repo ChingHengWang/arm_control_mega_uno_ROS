@@ -32,6 +32,7 @@ int offset_flag=0;
 
 struct mySerialSendByte{
   char cS=0;
+  char cS2=0;
   byte cV0H=0;
   byte cV0L=0;
   byte cV1H=0;
@@ -42,7 +43,8 @@ struct mySerialSendByte{
   byte cV3L=0;
   byte cV4H=0;
   byte cV4L=0;
-  byte cF=0; 
+  char cF=0; 
+  char cF2=0;
   };
 mySerialSendByte mySerialSendByte;
 
@@ -180,32 +182,20 @@ void loop(){
       }
 
           
-    int v[5]=[1,2,3,4,5];  
+    int V[5]={9,1,2,3,4}; 
     mySerialSendByte.cS='{';
-    mySerialSendByte.cV0H =highByte(v[0]);
-    mySerialSendByte.cV0L =lowByte(v[0];
-    mySerialSendByte.cV1H =highByte(v[1]);
-    mySerialSendByte.cV1L =lowByte(v[1]);
-    mySerialSendByte.cV2H =highByte(v[2]);
-    mySerialSendByte.cV2L =lowByte(v[2]);
-    mySerialSendByte.cV3H =highByte(v[3]);
-    mySerialSendByte.cV3L =lowByte(v[3]);
-    mySerialSendByte.cV4H =highByte(v[4]);
-    mySerialSendByte.cV4L =lowByte(v[4]);
-    mySerialSendByte.cF='}'; 
+    mySerialSendByte.cS2=' ';    
+    mySerialSendByte.cV0H =highByte(V[0]);
+    mySerialSendByte.cV0L =lowByte(V[0]);
+    mySerialSendByte.cF=' ';
+    mySerialSendByte.cF2='}'; 
  
     Serial.print(mySerialSendByte.cS);
+    Serial.print(mySerialSendByte.cS2);
     Serial.write(mySerialSendByte.cV0H);
     Serial.write(mySerialSendByte.cV0L);
-    Serial.write(mySerialSendByte.cV1H);
-    Serial.write(mySerialSendByte.cV1L);
-    Serial.write(mySerialSendByte.cV2H);
-    Serial.write(mySerialSendByte.cV2L);
-    Serial.write(mySerialSendByte.cV3H);
-    Serial.write(mySerialSendByte.cV3L);
-    Serial.write(mySerialSendByte.cV4H);
-    Serial.write(mySerialSendByte.cV4L);
     Serial.print(mySerialSendByte.cF);
+    Serial.print(mySerialSendByte.cF2);
  
     }
 }
