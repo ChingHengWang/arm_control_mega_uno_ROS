@@ -22,8 +22,8 @@
 #define HOME_ZONE_STATE 2
 #define WORKING_RANGE_STATE 3
 #define END_ZONE_STATE 4
-double resolution=(double)6.28/32767; //resolution
-
+double rad_tick=(double)6.28/32767; //resolution
+double degree_tick=(double)360/32767; //resolution
 
 int state=HOME_STATE;
 int home_switch=0;
@@ -60,7 +60,7 @@ volatile long encoderPos = 0;
 volatile long unknownvalue = 0;
 
 Metro mainTimer = Metro(10);
-
+Metro feedbackTimer = Metro(20);
 //HOME
 #define HomePin 0
 #define EndPin 1
@@ -79,14 +79,28 @@ void setup() {
     attachInterrupt(0, doEncoder, CHANGE); // encoder pin on interrupt 0 - pin 2
     attachInterrupt(1, doEncoder, CHANGE);
 
-    Serial.begin (57600);
+    Serial.begin (115200);
 
 } 
 
 void loop(){
-  if (mainTimer.check() == true) { 
-     /////WRITE ENC to mega
 
+  if (feedbackTimer.check() == true) {
+      send_feedback();
+      //delay(10);
+  }
+
+  
+  if (mainTimer.check() == true) {
+       control_loop();    
+  } 
+
+
+
+}
+
+void control_loop(){
+    /////WRITE ENC to mega
     
     //READ HOME SENSOR VALUE
     int HomeValue=analogRead(HomePin);
@@ -108,14 +122,14 @@ void loop(){
             send_cmd_to_motor(0);
             if(home_switch==1)
               state=HOME_STATE;
-	          break;
+            break;
 
       
       case HOME_STATE:
           
             if(HomeValue>650) {
               if(offset_flag==0){
-              	pos_offset=anglePos_Joint;
+                pos_offset=anglePos_Joint;
                 offset_flag=1;
               }
                 state=HOME_ZONE_STATE;
@@ -128,19 +142,19 @@ void loop(){
               else {
                   send_cmd_to_motor(HOME_SPEED_PWM);
               }
-            	    
+                  
             }
-	        
+          
             break;
 
       case HOME_ZONE_STATE:
             if(home_switch==1)
               go_joint_pos_ros(0);
             else{
-        	    if(cmdPos_ROS>anglePos_ROS) {
+              if(cmdPos_ROS>anglePos_ROS) {
                     go_joint_pos_ros(cmdPos_ROS);              
                     state=WORKING_RANGE_STATE;
-        	    }
+              }
               else
                     go_joint_pos_ros(0);
             }
@@ -179,27 +193,38 @@ void loop(){
             }
             break;
    
-      }
+      } 
+  }
 
-          
-    int V[5]={9,1,2,3,4}; 
-    mySerialSendByte.cS='{';
-    mySerialSendByte.cS2=' ';    
+
+void send_feedback(){
+  
+    int V[3]={state,(int)anglePos_ROS/degree_tick,(int)cmdPos_ROS/degree_tick}; 
+    mySerialSendByte.cS='{';  
     mySerialSendByte.cV0H =highByte(V[0]);
     mySerialSendByte.cV0L =lowByte(V[0]);
-    mySerialSendByte.cF=' ';
-    mySerialSendByte.cF2='}'; 
- 
+    
+    mySerialSendByte.cV1H =highByte(V[1]);
+    mySerialSendByte.cV1L =lowByte(V[1]);
+
+    mySerialSendByte.cV2H =highByte(V[2]);
+    mySerialSendByte.cV2L =lowByte(V[2]);
+        
+    mySerialSendByte.cF='.'; 
+    mySerialSendByte.cF2='}';  
     Serial.print(mySerialSendByte.cS);
-    Serial.print(mySerialSendByte.cS2);
     Serial.write(mySerialSendByte.cV0H);
     Serial.write(mySerialSendByte.cV0L);
+    Serial.print(',');    
+    Serial.write(mySerialSendByte.cV1H);
+    Serial.write(mySerialSendByte.cV1L);
+    Serial.print(',');    
+    Serial.write(mySerialSendByte.cV2H);
+    Serial.write(mySerialSendByte.cV2L);
     Serial.print(mySerialSendByte.cF);
     Serial.print(mySerialSendByte.cF2);
- 
-    }
-}
 
+  }
 
 void go_joint_pos_ros(double target_pos_ros) {
       double target_pos_joint=target_pos_ros+pos_offset;
@@ -231,7 +256,7 @@ void get_cmd_pos() {
      if(rF=='}') { 
        home_switch=((rSH<<8)+rSL);        
        int quantity=((rPH<<8)+rPL); 
-       cmdPos_ROS=quantity*resolution*(double)360/6.28;
+       cmdPos_ROS=quantity*rad_tick*(double)360/6.28;
        }
      }
 
@@ -253,7 +278,7 @@ void get_angle_from_enc() {
 
 
 void send_cmd_to_motor(int cmdpwm) {
-
+    int limit=100;
     int vPlus=0,vMinus=0;
     if(cmdpwm>=0)
     {
@@ -266,16 +291,16 @@ void send_cmd_to_motor(int cmdpwm) {
       vMinus=-cmdpwm;
     }   
     
-     if(vPlus>=255)
-        vPlus=255;
-     else if(vPlus<-255)
-          vPlus=-255;
+     if(vPlus>=limit)
+        vPlus=limit;
+     else if(vPlus<-limit)
+          vPlus=-limit;
           
           
-     if(vMinus>=255)
-        vMinus=255;
-     else if(vMinus<-255)
-          vMinus=-255;      
+     if(vMinus>=limit)
+        vMinus=limit;
+     else if(vMinus<-limit)
+          vMinus=-limit;      
     analogWrite(MotorPin1,vPlus);
     analogWrite(MotorPin0,vMinus);
  
