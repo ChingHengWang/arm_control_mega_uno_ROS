@@ -21,7 +21,7 @@
     * 1 : enable back to home event , can enable this event in every status
 
 
-## feedback for present angle position 
+## Feedback for present angle position 
 * rostopic name
     * ***/andbot/joints/[LR][0:3]/feedback/angle***
 * message type
@@ -30,7 +30,7 @@
     * range : 0 to max wroking range 
     * unit: ***radius***
 
-## feedback for present joint status
+## Feedback for present joint status
 * rostopic name
     * ***/andbot/joints/[LR][0:3]/feedbacd/status***
 * message type
