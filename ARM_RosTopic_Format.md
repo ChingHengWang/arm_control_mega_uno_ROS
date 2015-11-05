@@ -9,15 +9,15 @@
     * ***std_msgs/Float64***
 * value range and unit
     * range : 0 to max wroking range 
-    * unit: ***radius***
+    * unit: ***radian***
 
-## Command form back home
+## Command for going back home
 * rostopic name 
     * ***/andbot/joints/[LR][0:3]/cmd/home***
 * message type 
     * ***std_msgs/Int16***
 * value 
-    * 0 : uneable back to home event
+    * 0 : disable back to home event
     * 1 : enable back to home event , can enable this event in every status
 
 
@@ -28,7 +28,7 @@
     * ***std_msgs/Float64***
 * value range and unit
     * range : 0 to max wroking range 
-    * unit: ***radius***
+    * unit: ***radian***
 
 ## Feedback for present joint status
 * rostopic name
