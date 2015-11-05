@@ -9,7 +9,7 @@
     * ***std_msgs/Float64***
 * value range and unit
     * range : 0 to max wroking range 
-    * unit: radius
+    * unit: ***radius***
 
 ## Command form back home
 * rostopic name 
@@ -32,7 +32,7 @@
 
 ## feedback for present joint status
 * rostopic name
-    * ***/andbot/joints/[LR][0:3]/feedbacd/status
+    * ***/andbot/joints/[LR][0:3]/feedbacd/status***
 * message type
     * ***std_msgs/Int16***
 * value 
