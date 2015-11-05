@@ -4,7 +4,7 @@
 #define RIGHT 1
 #define LEFT -1
 //#define AXIS_TYPE OUTWARD
-#define AXIS_TYPE RIGHT
+#define AXIS_TYPE LEFT
 #define HOME_SPEED_PWM 150
 
 //MOTOR PWM PIN ASSIGNMENT
@@ -60,7 +60,7 @@ volatile long encoderPos = 0;
 volatile long unknownvalue = 0;
 
 Metro mainTimer = Metro(10);
-Metro feedbackTimer = Metro(20);
+Metro feedbackTimer = Metro(10);
 //HOME
 #define HomePin 0
 #define EndPin 1
@@ -79,7 +79,7 @@ void setup() {
     attachInterrupt(0, doEncoder, CHANGE); // encoder pin on interrupt 0 - pin 2
     attachInterrupt(1, doEncoder, CHANGE);
 
-    Serial.begin (115200);
+    Serial.begin (57600);
 
 } 
 
@@ -198,8 +198,9 @@ void control_loop(){
 
 
 void send_feedback(){
-  
-    int V[3]={state,(int)anglePos_ROS/degree_tick,(int)cmdPos_ROS/degree_tick}; 
+
+    int V[3]={state,(int)anglePos_ROS,(int)cmdPos_ROS};
+    //int V[3]={1,2,3}; 
     mySerialSendByte.cS='{';  
     mySerialSendByte.cV0H =highByte(V[0]);
     mySerialSendByte.cV0L =lowByte(V[0]);
@@ -212,6 +213,36 @@ void send_feedback(){
         
     mySerialSendByte.cF='.'; 
     mySerialSendByte.cF2='}';  
+
+    byte sendBuffer[10] = {0};//[12];
+    sendBuffer[0]=mySerialSendByte.cS;
+    sendBuffer[1]=mySerialSendByte.cV0H;
+    sendBuffer[2]=mySerialSendByte.cV0L;
+    sendBuffer[3]=mySerialSendByte.cV1H;
+    sendBuffer[4]=mySerialSendByte.cV1L;
+    sendBuffer[5]=mySerialSendByte.cV2H;
+    sendBuffer[6]=mySerialSendByte.cV2L;
+    sendBuffer[7]=highByte(V[0]+V[1]+V[2]);
+    sendBuffer[8]=lowByte(V[0]+V[1]+V[2]);   
+    sendBuffer[9]=mySerialSendByte.cF2;
+    //Serial.write(sendBuffer,1);  
+    Serial.write(sendBuffer,sizeof(sendBuffer));
+/*
+    sendBuffer[0]=mySerialSendByte.cS;
+    sendBuffer[1]=mySerialSendByte.cV0H;
+    sendBuffer[2]=mySerialSendByte.cV0L;
+    sendBuffer[3]=',';
+    sendBuffer[4]=mySerialSendByte.cV1H;
+    sendBuffer[5]=mySerialSendByte.cV1L;
+    sendBuffer[6]=',';
+    sendBuffer[7]=mySerialSendByte.cV2H;
+    sendBuffer[8]=mySerialSendByte.cV2L;
+    sendBuffer[9]=',';
+    sendBuffer[10]=mySerialSendByte.cF;
+    sendBuffer[11]=mySerialSendByte.cF2;
+    Serial.write(sendBuffer,12);
+*/
+    /*
     Serial.print(mySerialSendByte.cS);
     Serial.write(mySerialSendByte.cV0H);
     Serial.write(mySerialSendByte.cV0L);
@@ -223,7 +254,8 @@ void send_feedback(){
     Serial.write(mySerialSendByte.cV2L);
     Serial.print(mySerialSendByte.cF);
     Serial.print(mySerialSendByte.cF2);
-
+    */
+    
   }
 
 void go_joint_pos_ros(double target_pos_ros) {
@@ -255,8 +287,8 @@ void get_cmd_pos() {
      char rF=commandArray[4];
      if(rF=='}') { 
        home_switch=((rSH<<8)+rSL);        
-       int quantity=((rPH<<8)+rPL); 
-       cmdPos_ROS=quantity*rad_tick*(double)360/6.28;
+       cmdPos_ROS=((rPH<<8)+rPL); 
+       //cmdPos_ROS=quantity*rad_tick*(double)360/6.28;
        }
      }
 
@@ -278,7 +310,7 @@ void get_angle_from_enc() {
 
 
 void send_cmd_to_motor(int cmdpwm) {
-    int limit=100;
+    int limit=255;
     int vPlus=0,vMinus=0;
     if(cmdpwm>=0)
     {
