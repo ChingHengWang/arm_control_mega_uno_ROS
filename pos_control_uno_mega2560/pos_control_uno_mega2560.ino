@@ -5,7 +5,7 @@
 #define LEFT -1
 //#define AXIS_TYPE OUTWARD
 #define AXIS_TYPE LEFT
-#define HOME_SPEED_PWM 150
+#define HOME_SPEED_PWM 255 //150
 
 //MOTOR PWM PIN ASSIGNMENT
 #define MotorPin0 9
