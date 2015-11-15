@@ -1,7 +1,7 @@
 # arm_control_mega_uno_ROS
 
 * manipulator
-![](https://github.com/ChingHengWang/arm_control_mega_uno_ROS/blob/master/pos_control_uno_noROS/DSC_0106.JPG)
+![](https://github.com/ChingHengWang/arm_control_mega_uno_ROS/blob/master/pos_control_uno_mega2560/DSC_0106.JPG)
  
 
 * pos_control_p_control_uno_unoROS
