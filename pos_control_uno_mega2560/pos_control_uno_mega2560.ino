@@ -1,17 +1,18 @@
 
 #include <SoftwareSerial.h>
 #include <Metro.h>
-#define RIGHT 1
-#define LEFT -1
 //#define AXIS_TYPE OUTWARD
-#define AXIS_TYPE LEFT
-#define HOME_SPEED_PWM 255 //150
+#define CW 1
+#define CCW -1 
+#define AXIS_TYPE CW
+#define HOME_SPEED_PWM 150 //150
 
 //MOTOR PWM PIN ASSIGNMENT
-#define MotorPin0 9
-#define MotorPin1 10
-
-
+//#define MotorPin0 9
+//#define MotorPin1 10
+#define MotorENA 9
+#define MotorENB 10
+#define MotorPin 11
 //ENCODER PIN ASSIGNMENT
 #define encoderPinA 2
 #define encoderPinB 3
@@ -22,10 +23,11 @@
 #define HOME_ZONE_STATE 2
 #define WORKING_RANGE_STATE 3
 #define END_ZONE_STATE 4
+#define MAX_PWM 150
 double rad_tick=(double)6.28/32767; //resolution
 double degree_tick=(double)360/32767; //resolution
 
-int state=HOME_STATE;
+int state=WORKING_RANGE_STATE;
 int home_switch=0;
 int offset_flag=0;
 
@@ -48,7 +50,7 @@ struct mySerialSendByte{
   };
 mySerialSendByte mySerialSendByte;
 
-double cmdPos_ROS=0,anglePos_ROS=0; //degree
+double cmdPos_ROS=90,anglePos_ROS=0; //degree
 double pos_offset=0;
 double max_working_rage=0;
 double cmdPos_Joint=0,anglePos_Joint=0;
@@ -68,9 +70,12 @@ Metro feedbackTimer = Metro(10);
 
 void setup() { 
 
-    pinMode(MotorPin0, OUTPUT);
-    pinMode(MotorPin1, OUTPUT);
-
+//    pinMode(MotorPin0, OUTPUT);
+//    pinMode(MotorPin1, OUTPUT);
+    pinMode(MotorENA, OUTPUT);
+    pinMode(MotorENB, OUTPUT);
+    pinMode(MotorPin, OUTPUT);  
+      
     pinMode(encoderPinA, INPUT); 
     digitalWrite(encoderPinA, HIGH); // turn on pullup resistor
     pinMode(encoderPinB, INPUT); 
@@ -92,10 +97,13 @@ void loop(){
 
   
   if (mainTimer.check() == true) {
-       control_loop();    
+       control_loop(); 
+        Serial.print(" cmdPos_ROS: "); Serial.print(cmdPos_ROS); 
+        Serial.print(" cmdPos_Joint: ");Serial.print(cmdPos_ROS); 
+        Serial.print(" anglePos_ROS: "); Serial.print(anglePos_ROS); 
+        Serial.print(" anglePos_Joint: ");Serial.print(anglePos_Joint); 
+        Serial.println("");    
   } 
-
-
 
 }
 
@@ -103,14 +111,15 @@ void control_loop(){
     /////WRITE ENC to mega
     
     //READ HOME SENSOR VALUE
-    int HomeValue=analogRead(HomePin);
-    int EndValue=analogRead(EndPin);
+    int HomeValue=0;//analogRead(HomePin);
+    int EndValue=0;//analogRead(EndPin);
 
     //GET CMD FROM MEGA
     get_cmd_pos();
     
     //CREATE cmdPos_Joint
-    cmdPos_Joint=cmdPos_ROS+pos_offset;
+      cmdPos_Joint=cmdPos_ROS+pos_offset;
+
     //GET ENC
     get_angle_from_enc();
 
@@ -119,22 +128,24 @@ void control_loop(){
     switch(state){
 
       case INIT_STATE:
-            send_cmd_to_motor(0);
+            send_cmd_to_motor_VNH2SP30(0,1);
             if(home_switch==1)
               state=HOME_STATE;
             break;
 
-      
+      /*
       case HOME_STATE:
           
             if(HomeValue>650) {
               if(offset_flag==0){
                 pos_offset=anglePos_Joint;
+                
                 offset_flag=1;
               }
                 state=HOME_ZONE_STATE;
 
             }
+      
             else{
               if (AXIS_TYPE==RIGHT){
                   send_cmd_to_motor(-HOME_SPEED_PWM);
@@ -142,11 +153,12 @@ void control_loop(){
               else {
                   send_cmd_to_motor(HOME_SPEED_PWM);
               }
-                  
+          
             }
           
             break;
 
+            
       case HOME_ZONE_STATE:
             if(home_switch==1)
               go_joint_pos_ros(0);
@@ -159,7 +171,12 @@ void control_loop(){
                     go_joint_pos_ros(0);
             }
             break;
+*/
 
+       
+
+
+            
       case WORKING_RANGE_STATE:
             if(home_switch==1)
               state=HOME_STATE;
@@ -179,6 +196,7 @@ void control_loop(){
 
            
             break;
+/*            
       case END_ZONE_STATE:
             if(home_switch==1)
               state=HOME_STATE;
@@ -192,7 +210,7 @@ void control_loop(){
               }
             }
             break;
-   
+*/   
       } 
   }
 
@@ -261,14 +279,12 @@ void send_feedback(){
 void go_joint_pos_ros(double target_pos_ros) {
       double target_pos_joint=target_pos_ros+pos_offset;
       double cmdPwm=Kp*(target_pos_joint-anglePos_Joint);
-      send_cmd_to_motor(cmdPwm);
-        
-      if (AXIS_TYPE==RIGHT){
-          send_cmd_to_motor(cmdPwm);
-      }
-      else {
-          send_cmd_to_motor(-cmdPwm);
-      }
+  if(AXIS_TYPE == CCW)
+      //send_cmd_to_motor(cmdPwm,-1);
+      send_cmd_to_motor_VNH2SP30(cmdPwm,-1);
+  else
+      //send_cmd_to_motor(cmdPwm,1);
+      send_cmd_to_motor_VNH2SP30(cmdPwm,1);
      }
 
 
@@ -296,22 +312,23 @@ void get_cmd_pos() {
 
 
 void get_angle_from_enc() {
-
-    if (AXIS_TYPE==RIGHT){
-          anglePos_Joint=-1*encoderPos*0.00694;//(double)360/(64*810*1);
-          anglePos_ROS=anglePos_Joint-pos_offset;
-    }
-    else {
+  
+  if(AXIS_TYPE == CCW){
           anglePos_Joint=1*encoderPos*0.00694;//(double)360/(64*810*1);      
           anglePos_ROS=anglePos_Joint-pos_offset;
-    }
+  }
+  else{
+          anglePos_Joint=-1*encoderPos*0.00694;//(double)360/(64*810*1);      
+          anglePos_ROS=anglePos_Joint-pos_offset;  
+  }
 }
 
 
+/*
+void send_cmd_to_motor(int cmdpwm_value,int direct) {
 
-void send_cmd_to_motor(int cmdpwm) {
-    int limit=255;
     int vPlus=0,vMinus=0;
+    int cmdpwm=cmdpwm_value*direct;
     if(cmdpwm>=0)
     {
       vPlus=cmdpwm;
@@ -323,22 +340,39 @@ void send_cmd_to_motor(int cmdpwm) {
       vMinus=-cmdpwm;
     }   
     
-     if(vPlus>=limit)
-        vPlus=limit;
-     else if(vPlus<-limit)
-          vPlus=-limit;
+     if(vPlus>=MAX_PWM)
+        vPlus=MAX_PWM;
+     else if(vPlus<-MAX_PWM)
+          vPlus=-MAX_PWM;
           
           
-     if(vMinus>=limit)
-        vMinus=limit;
-     else if(vMinus<-limit)
-          vMinus=-limit;      
+     if(vMinus>=MAX_PWM)
+        vMinus=MAX_PWM;
+     else if(vMinus<-MAX_PWM)
+          vMinus=-MAX_PWM;      
     analogWrite(MotorPin1,vPlus);
     analogWrite(MotorPin0,vMinus);
  
 }
+*/
+void send_cmd_to_motor_VNH2SP30(int cmdpwm_value,int direct) {
 
-
+     if(cmdpwm_value>=MAX_PWM)
+        cmdpwm_value=MAX_PWM;
+            
+    if (direct==1){
+      analogWrite(MotorPin,cmdpwm_value);
+      digitalWrite(MotorENA,1);      
+      digitalWrite(MotorENB,0);        
+      }
+    else if(direct==-1){
+      analogWrite(MotorPin,cmdpwm_value);
+      digitalWrite(MotorENA,0);      
+      digitalWrite(MotorENB,1);  
+      }
+    
+ 
+}
 
 
 
