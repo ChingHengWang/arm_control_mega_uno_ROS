@@ -2,17 +2,17 @@
 #include <SoftwareSerial.h>
 #include <Metro.h>
 //#define AXIS_TYPE OUTWARD
-#define CW 1
-#define CCW -1 
-#define AXIS_TYPE CW
+#define CW 1 //L0 L1 L2 L3 R1
+#define CCW -1 //R0
+#define AXIS_TYPE CW 
 #define HOME_SPEED_PWM 150 //150
 
 //MOTOR PWM PIN ASSIGNMENT
-//#define MotorPin0 9
-//#define MotorPin1 10
-#define MotorENA 9
-#define MotorENB 10
-#define MotorPin 11
+#define MotorPin0 9
+#define MotorPin1 10
+//#define MotorENA 4
+//#define MotorENB 5
+//#define MotorPin 6
 //ENCODER PIN ASSIGNMENT
 #define encoderPinA 2
 #define encoderPinB 3
@@ -23,7 +23,7 @@
 #define HOME_ZONE_STATE 2
 #define WORKING_RANGE_STATE 3
 #define END_ZONE_STATE 4
-#define MAX_PWM 150
+#define MAX_PWM 250
 double rad_tick=(double)6.28/32767; //resolution
 double degree_tick=(double)360/32767; //resolution
 
@@ -49,9 +49,10 @@ struct mySerialSendByte{
   char cF2=0;
   };
 mySerialSendByte mySerialSendByte;
-
+double cmdPwm=0;
 double cmdPos_ROS=90,anglePos_ROS=0; //degree
 double pos_offset=0;
+int pos_offset_v=0;
 double max_working_rage=0;
 double cmdPos_Joint=0,anglePos_Joint=0;
 double Kp=20;
@@ -70,11 +71,11 @@ Metro feedbackTimer = Metro(10);
 
 void setup() { 
 
-//    pinMode(MotorPin0, OUTPUT);
-//    pinMode(MotorPin1, OUTPUT);
-    pinMode(MotorENA, OUTPUT);
-    pinMode(MotorENB, OUTPUT);
-    pinMode(MotorPin, OUTPUT);  
+    pinMode(MotorPin0, OUTPUT);
+    pinMode(MotorPin1, OUTPUT);
+//    pinMode(MotorENA, OUTPUT);
+//    pinMode(MotorENB, OUTPUT);
+//    pinMode(MotorPin, OUTPUT);  
       
     pinMode(encoderPinA, INPUT); 
     digitalWrite(encoderPinA, HIGH); // turn on pullup resistor
@@ -98,13 +99,9 @@ void loop(){
   
   if (mainTimer.check() == true) {
        control_loop(); 
-        Serial.print(" cmdPos_ROS: "); Serial.print(cmdPos_ROS); 
-        Serial.print(" cmdPos_Joint: ");Serial.print(cmdPos_ROS); 
-        Serial.print(" anglePos_ROS: "); Serial.print(anglePos_ROS); 
-        Serial.print(" anglePos_Joint: ");Serial.print(anglePos_Joint); 
-        Serial.println("");    
+       printTemple();
   } 
-
+//printTemple();
 }
 
 void control_loop(){
@@ -118,7 +115,11 @@ void control_loop(){
     get_cmd_pos();
     
     //CREATE cmdPos_Joint
-      cmdPos_Joint=cmdPos_ROS+pos_offset;
+    
+    pos_offset=pos_offset+0.01*pos_offset_v;
+
+          
+    cmdPos_Joint=cmdPos_ROS+pos_offset;
 
     //GET ENC
     get_angle_from_enc();
@@ -128,52 +129,23 @@ void control_loop(){
     switch(state){
 
       case INIT_STATE:
-            send_cmd_to_motor_VNH2SP30(0,1);
+            send_cmd_to_motor(0);
             if(home_switch==1)
               state=HOME_STATE;
             break;
-
-      /*
-      case HOME_STATE:
-          
-            if(HomeValue>650) {
-              if(offset_flag==0){
-                pos_offset=anglePos_Joint;
-                
-                offset_flag=1;
-              }
-                state=HOME_ZONE_STATE;
-
-            }
-      
-            else{
-              if (AXIS_TYPE==RIGHT){
-                  send_cmd_to_motor(-HOME_SPEED_PWM);
-              }
-              else {
-                  send_cmd_to_motor(HOME_SPEED_PWM);
-              }
-          
-            }
-          
-            break;
-
-            
+       
       case HOME_ZONE_STATE:
             if(home_switch==1)
               go_joint_pos_ros(0);
             else{
               if(cmdPos_ROS>anglePos_ROS) {
-                    go_joint_pos_ros(cmdPos_ROS);              
+                    go_joint_pos_ros(cmdPos_ROS);
                     state=WORKING_RANGE_STATE;
               }
               else
                     go_joint_pos_ros(0);
             }
             break;
-*/
-
-       
 
 
             
@@ -196,21 +168,7 @@ void control_loop(){
 
            
             break;
-/*            
-      case END_ZONE_STATE:
-            if(home_switch==1)
-              state=HOME_STATE;
-            else {
-              if(cmdPos_ROS<anglePos_ROS) {
-                    go_joint_pos_ros(cmdPos_ROS); 
-                    state=WORKING_RANGE_STATE;
-              }
-              else {
-                    go_joint_pos_ros(max_working_rage);  
-              }
-            }
-            break;
-*/   
+ 
       } 
   }
 
@@ -245,46 +203,20 @@ void send_feedback(){
     sendBuffer[9]=mySerialSendByte.cF2;
     //Serial.write(sendBuffer,1);  
     Serial.write(sendBuffer,sizeof(sendBuffer));
-/*
-    sendBuffer[0]=mySerialSendByte.cS;
-    sendBuffer[1]=mySerialSendByte.cV0H;
-    sendBuffer[2]=mySerialSendByte.cV0L;
-    sendBuffer[3]=',';
-    sendBuffer[4]=mySerialSendByte.cV1H;
-    sendBuffer[5]=mySerialSendByte.cV1L;
-    sendBuffer[6]=',';
-    sendBuffer[7]=mySerialSendByte.cV2H;
-    sendBuffer[8]=mySerialSendByte.cV2L;
-    sendBuffer[9]=',';
-    sendBuffer[10]=mySerialSendByte.cF;
-    sendBuffer[11]=mySerialSendByte.cF2;
-    Serial.write(sendBuffer,12);
-*/
-    /*
-    Serial.print(mySerialSendByte.cS);
-    Serial.write(mySerialSendByte.cV0H);
-    Serial.write(mySerialSendByte.cV0L);
-    Serial.print(',');    
-    Serial.write(mySerialSendByte.cV1H);
-    Serial.write(mySerialSendByte.cV1L);
-    Serial.print(',');    
-    Serial.write(mySerialSendByte.cV2H);
-    Serial.write(mySerialSendByte.cV2L);
-    Serial.print(mySerialSendByte.cF);
-    Serial.print(mySerialSendByte.cF2);
-    */
+
+
     
   }
 
 void go_joint_pos_ros(double target_pos_ros) {
       double target_pos_joint=target_pos_ros+pos_offset;
-      double cmdPwm=Kp*(target_pos_joint-anglePos_Joint);
+      cmdPwm=Kp*(target_pos_joint-anglePos_Joint);
   if(AXIS_TYPE == CCW)
-      //send_cmd_to_motor(cmdPwm,-1);
-      send_cmd_to_motor_VNH2SP30(cmdPwm,-1);
+      send_cmd_to_motor(-cmdPwm);
+      //send_cmd_to_motor_VNH2SP30(cmdPwm,-1);
   else
-      //send_cmd_to_motor(cmdPwm,1);
-      send_cmd_to_motor_VNH2SP30(cmdPwm,1);
+      send_cmd_to_motor(cmdPwm);
+      //send_cmd_to_motor_VNH2SP30(250,-1);
      }
 
 
@@ -302,8 +234,8 @@ void get_cmd_pos() {
      byte rPL=commandArray[3];
      char rF=commandArray[4];
      if(rF=='}') { 
-       home_switch=((rSH<<8)+rSL);        
-       cmdPos_ROS=((rPH<<8)+rPL); 
+       pos_offset_v=((rSH<<8)+rSL)*0.01;        
+       cmdPos_ROS=((rPH<<8)+rPL); //degree
        //cmdPos_ROS=quantity*rad_tick*(double)360/6.28;
        }
      }
@@ -324,11 +256,10 @@ void get_angle_from_enc() {
 }
 
 
-/*
-void send_cmd_to_motor(int cmdpwm_value,int direct) {
+
+void send_cmd_to_motor(int cmdpwm) {
 
     int vPlus=0,vMinus=0;
-    int cmdpwm=cmdpwm_value*direct;
     if(cmdpwm>=0)
     {
       vPlus=cmdpwm;
@@ -354,28 +285,6 @@ void send_cmd_to_motor(int cmdpwm_value,int direct) {
     analogWrite(MotorPin0,vMinus);
  
 }
-*/
-void send_cmd_to_motor_VNH2SP30(int cmdpwm_value,int direct) {
-
-     if(cmdpwm_value>=MAX_PWM)
-        cmdpwm_value=MAX_PWM;
-            
-    if (direct==1){
-      analogWrite(MotorPin,cmdpwm_value);
-      digitalWrite(MotorENA,1);      
-      digitalWrite(MotorENB,0);        
-      }
-    else if(direct==-1){
-      analogWrite(MotorPin,cmdpwm_value);
-      digitalWrite(MotorENA,0);      
-      digitalWrite(MotorENB,1);  
-      }
-    
- 
-}
-
-
-
 
 
 void doEncoder() {
@@ -429,8 +338,14 @@ void doEncoder() {
 }
 
 
-/*
-Serial.print("Encoder: "); Serial.print(encoderPos); 
-Serial.print(" unKnown: ");Serial.print(unknownvalue, DEC); 
-Serial.println(""); 
-*/
+
+void printTemple(){
+        Serial.print(" cmdPos_ROS: "); Serial.print(cmdPos_ROS); 
+        Serial.print(" cmdPos_Joint: ");Serial.print(cmdPos_ROS); 
+        Serial.print(" anglePos_ROS: "); Serial.print(anglePos_ROS); 
+        Serial.print(" anglePos_Joint: ");Serial.print(anglePos_Joint); 
+        Serial.print(" cmdPwm: ");Serial.print(cmdPwm); 
+        Serial.println("");     
+  
+  }
+
